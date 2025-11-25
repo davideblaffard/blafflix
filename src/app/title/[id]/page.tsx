@@ -1,26 +1,50 @@
 import { notFound } from "next/navigation";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { getMovieById, getSimilarMovies } from "@/lib/movies";
+import { Movie } from "@/types/movie";
 import { TitleCard } from "@/components/catalog/TitleCard";
+import type { Metadata } from "next";
 
 interface TitlePageProps {
   params: { id: string };
 }
 
-export function generateMetadata({ params }: TitlePageProps) {
-  const movie = getMovieById(params.id);
-  if (!movie) return { title: "Contenuto non trovato – Blafflix" };
-  return {
-    title: `${movie.title} – Blafflix`,
-    description: movie.description
-  };
+export async function generateMetadata(
+  { params }: TitlePageProps
+): Promise<Metadata> {
+  try {
+    const movie = await getMovieById(params.id);
+    if (!movie) {
+      return {
+        title: "Contenuto non trovato – Blafflix"
+      };
+    }
+
+    return {
+      title: `${movie.title} – Blafflix`,
+      description: movie.description
+    };
+  } catch {
+    return {
+      title: "Contenuto non disponibile – Blafflix"
+    };
+  }
 }
 
-export default function TitlePage({ params }: TitlePageProps) {
-  const movie = getMovieById(params.id);
-  if (!movie) return notFound();
+export default async function TitlePage({ params }: TitlePageProps) {
+  const movie = await getMovieById(params.id);
 
-  const similar = getSimilarMovies(movie);
+  if (!movie) {
+    return notFound();
+  }
+
+  let similar: Movie[] = [];
+
+  try {
+    similar = await getSimilarMovies(movie);
+  } catch (error) {
+    console.error("Errore nel recupero dei contenuti simili:", error);
+  }
 
   return (
     <MainLayout>
@@ -61,9 +85,11 @@ export default function TitlePage({ params }: TitlePageProps) {
           <p className="text-sm text-neutral-200 md:text-base">
             {movie.description}
           </p>
-          <p className="text-xs text-neutral-400">
-            Generi: {movie.genre.join(", ")}
-          </p>
+          {movie.genre.length > 0 && (
+            <p className="text-xs text-neutral-400">
+              Generi: {movie.genre.join(", ")}
+            </p>
+          )}
         </div>
 
         {similar.length > 0 && (

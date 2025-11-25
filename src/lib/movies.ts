@@ -1,99 +1,82 @@
 import { Movie } from "@/types/movie";
+import {
+  fetchTrending,
+  fetchTopRated,
+  fetchOriginals,
+  fetchMovieById as fetchMovieByIdFromTmdb,
+  fetchSimilarById,
+  searchMoviesByQuery
+} from "@/lib/tmdb";
 
-export const movies: Movie[] = [
-  {
-    id: "1",
-    title: "Blafflix Originals: The Code Awakens",
-    type: "series",
-    genre: ["Sci-Fi", "Drama"],
-    year: 2024,
-    rating: 8.7,
-    seasons: 2,
-    posterUrl: "https://images.pexels.com/photos/799137/pexels-photo-799137.jpeg?auto=compress&cs=tinysrgb&w=400",
-    backdropUrl: "https://images.pexels.com/photos/799137/pexels-photo-799137.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    description:
-      "In un futuro dominato da IA ribelli, un giovane developer scopre di poter modificare la realtà editando il codice sorgente dell'universo.",
-    isTrending: true,
-    isOriginal: true
-  },
-  {
-    id: "2",
-    title: "Dark Mode",
-    type: "movie",
-    genre: ["Thriller", "Tech"],
-    year: 2023,
-    rating: 7.9,
-    durationMinutes: 116,
-    posterUrl: "https://images.pexels.com/photos/3746311/pexels-photo-3746311.jpeg?auto=compress&cs=tinysrgb&w=400",
-    backdropUrl: "https://images.pexels.com/photos/3746311/pexels-photo-3746311.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    description:
-      "Un designer ossessionato dalla UX perfetta scopre un bug che rende letale il suo nuovo tema scuro.",
-    isTrending: true,
-    isTopRated: true
-  },
-  {
-    id: "3",
-    title: "Commit History",
-    type: "series",
-    genre: ["Comedy"],
-    year: 2022,
-    rating: 8.2,
-    seasons: 3,
-    posterUrl: "https://images.pexels.com/photos/1181671/pexels-photo-1181671.jpeg?auto=compress&cs=tinysrgb&w=400",
-    backdropUrl: "https://images.pexels.com/photos/1181671/pexels-photo-1181671.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    description:
-      "La vita (e i bug) quotidiani di un team di sviluppo remoto che comunica solo tramite commit e meme.",
-    isOriginal: true
-  },
-  {
-    id: "4",
-    title: "Frontend Wars",
-    type: "movie",
-    genre: ["Action", "Comedy"],
-    year: 2021,
-    rating: 7.4,
-    durationMinutes: 104,
-    posterUrl: "https://images.pexels.com/photos/2763108/pexels-photo-2763108.jpeg?auto=compress&cs=tinysrgb&w=400",
-    backdropUrl: "https://images.pexels.com/photos/2763108/pexels-photo-2763108.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    description:
-      "Framework contro framework in una guerra senza esclusione di colpi per il dominio del DOM.",
-    isTopRated: true
-  },
-  {
-    id: "5",
-    title: "Refactor",
-    type: "movie",
-    genre: ["Drama"],
-    year: 2020,
-    rating: 8.1,
-    durationMinutes: 98,
-    posterUrl: "https://images.pexels.com/photos/1181670/pexels-photo-1181670.jpeg?auto=compress&cs=tinysrgb&w=400",
-    backdropUrl: "https://images.pexels.com/photos/1181670/pexels-photo-1181670.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    description:
-      "Un senior developer torna sul suo legacy code di 10 anni prima per salvarlo dal disastro.",
-    isTrending: false
+/**
+ * Ritorna i contenuti trending (film + serie) da TMDB.
+ */
+export async function getTrendingMovies(): Promise<Movie[]> {
+  const movies = await fetchTrending();
+  return movies.map((m) => ({ ...m, isTrending: true }));
+}
+
+/**
+ * Ritorna i film top rated da TMDB.
+ */
+export async function getTopRatedMovies(): Promise<Movie[]> {
+  const movies = await fetchTopRated();
+  return movies.map((m) => ({ ...m, isTopRated: true }));
+}
+
+/**
+ * Ritorna gli "originals" (serie Netflix) da TMDB.
+ */
+export async function getOriginals(): Promise<Movie[]> {
+  const movies = await fetchOriginals();
+  return movies.map((m) => ({ ...m, isOriginal: true }));
+}
+
+/**
+ * Dettaglio contenuto a partire dall'id interno (composito).
+ */
+export async function getMovieById(id: string): Promise<Movie | null> {
+  return fetchMovieByIdFromTmdb(id);
+}
+
+/**
+ * Contenuti simili per la sezione "Contenuti simili".
+ *
+ * Usa l'endpoint /{movie|tv}/{id}/similar di TMDB
+ * in base all'id composito del contenuto sorgente.
+ */
+export async function getSimilarMovies(movie: Movie): Promise<Movie[]> {
+  try {
+    return await fetchSimilarById(movie.id);
+  } catch {
+    // In caso di errore ritorniamo un array vuoto, così la UI può semplicemente
+    // non mostrare la sezione "Contenuti simili" senza andare in crash.
+    return [];
   }
-];
+}
 
-export const getMovieById = (id: string): Movie | undefined =>
-  movies.find((m) => m.id === id);
+/**
+ * Ricerca: lato server → chiama TMDB direttamente.
+ * Lato client → chiama l'API interna /api/search per non esporre la API key.
+ */
+export async function searchMovies(query: string): Promise<Movie[]> {
+  if (!query.trim()) return [];
 
-export const getSimilarMovies = (movie: Movie): Movie[] =>
-  movies.filter(
-    (m) =>
-      m.id !== movie.id && m.genre.some((g) => movie.genre.includes(g))
+  // Lato server (es: Server Components, route handlers)
+  if (typeof window === "undefined") {
+    return searchMoviesByQuery(query);
+  }
+
+  // Lato client: chiamiamo l'API route che a sua volta interroga TMDB.
+  const res = await fetch(
+    `/api/search?query=${encodeURIComponent(query)}`,
+    { method: "GET" }
   );
 
-export const getTrendingMovies = (): Movie[] =>
-  movies.filter((m) => m.isTrending);
+  if (!res.ok) {
+    throw new Error("Errore durante la ricerca su TMDB.");
+  }
 
-export const getTopRatedMovies = (): Movie[] =>
-  movies.filter((m) => m.isTopRated);
-
-export const getOriginals = (): Movie[] =>
-  movies.filter((m) => m.isOriginal);
-
-export const searchMovies = (query: string): Movie[] => {
-  const q = query.toLowerCase();
-  return movies.filter((m) => m.title.toLowerCase().includes(q));
-};
+  const data = (await res.json()) as Movie[];
+  return data;
+}
