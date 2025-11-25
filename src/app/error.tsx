@@ -15,20 +15,15 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <html>
-      <body className="bg-black text-white">
-        <div className="min-h-screen">
-          <ErrorState message="Qualcosa è andato storto." />
-          <div className="flex justify-center">
-            <button
-              onClick={reset}
-              className="rounded bg-white px-4 py-2 text-sm text-black"
-            >
-              Riprova
-            </button>
-          </div>
-        </div>
-      </body>
-    </html>
+    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-4">
+      <ErrorState message="Qualcosa è andato storto." />
+
+      <button
+        onClick={reset}
+        className="mt-6 px-4 py-2 bg-white text-black rounded"
+      >
+        Riprova
+      </button>
+    </div>
   );
 }

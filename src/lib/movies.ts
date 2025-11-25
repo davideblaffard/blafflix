@@ -35,9 +35,20 @@ export async function getOriginals(): Promise<Movie[]> {
 /**
  * Dettaglio contenuto a partire dall'id interno (composito).
  */
-export async function getMovieById(id: string): Promise<Movie | null> {
-  return fetchMovieByIdFromTmdb(id);
+export async function getMovieById(id: string | undefined): Promise<Movie | null> {
+  // Se l'id è mancante o vuoto, ritorniamo null: la pagina chiamerà notFound()
+  if (!id || !id.trim()) {
+    return null;
+  }
+
+  try {
+    return await fetchMovieByIdFromTmdb(id);
+  } catch (error) {
+    console.error("Errore nel recupero del contenuto TMDB:", error);
+    return null;
+  }
 }
+
 
 /**
  * Contenuti simili per la sezione "Contenuti simili".

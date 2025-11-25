@@ -108,14 +108,35 @@ function buildCompositeId(mediaType: TmdbMediaType, tmdbId: number): string {
 function parseCompositeId(
   compositeId: string
 ): { mediaType: TmdbMediaType; tmdbId: number } {
-  const [mediaTypeRaw, idRaw] = compositeId.split("-");
-  const mediaType = mediaTypeRaw === "tv" ? "tv" : "movie";
-  const tmdbId = Number(idRaw);
+  if (!compositeId) {
+    throw new Error("Composite id mancante.");
+  }
+
+  let mediaType: TmdbMediaType = "movie";
+  let idPart = compositeId.trim();
+
+  // Formato "movie-123" / "tv-456"
+  if (idPart.includes("-")) {
+    const [rawType, rawId] = idPart.split("-", 2);
+    if (rawType === "movie" || rawType === "tv") {
+      mediaType = rawType;
+      idPart = rawId;
+    } else {
+      // Se non riconosco il prefisso, tratto tutto come id numerico movie
+      idPart = compositeId;
+      mediaType = "movie";
+    }
+  }
+
+  const tmdbId = Number(idPart);
   if (!tmdbId || Number.isNaN(tmdbId)) {
     throw new Error(`ID TMDB non valido: ${compositeId}`);
   }
+
   return { mediaType, tmdbId };
 }
+
+
 
 /**
  * Converte un oggetto tipo TMDB in il nostro tipo Movie interno.
