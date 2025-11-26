@@ -8,6 +8,7 @@ import { Movie } from "@/types/movie";
 import { EmptyState } from "@/components/states/EmptyState";
 import { TitleCard } from "@/components/catalog/TitleCard";
 import { Spinner } from "@/components/ui/Spinner";
+import { TitleCardSkeleton } from "@/components/skeleton/TitleCardSkeleton";
 
 export default function SearchPage() {
   const { query } = useSearchStore();
@@ -66,11 +67,18 @@ export default function SearchPage() {
         )}
 
         {query && loading && (
-          <div className="flex items-center gap-2 py-8 text-neutral-300">
-            <Spinner />
-            <span className="text-sm">
-              Cerco "{query}" su Blafflix...
-            </span>
+          <div className="space-y-4 py-4">
+            <div className="flex items-center gap-2 text-neutral-300">
+              <Spinner />
+              <span className="text-sm">
+                Cerco "{query}" su Blafflix...
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, idx) => (
+                <TitleCardSkeleton key={idx} />
+              ))}
+            </div>
           </div>
         )}
 
@@ -88,7 +96,7 @@ export default function SearchPage() {
           />
         )}
 
-        {results.length > 0 && (
+        {results.length > 0 && !loading && !error && (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {results.map((movie) => (
               <TitleCard key={movie.id} movie={movie} />
