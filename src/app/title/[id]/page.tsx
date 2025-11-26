@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { getMovieById, getSimilarMovies } from "@/lib/movies";
 import { Movie } from "@/types/movie";
@@ -76,6 +77,23 @@ export default async function TitlePage({ params }: TitlePageProps) {
             <span className="text-xs uppercase text-neutral-400">
               {movie.type === "movie" ? "Film" : "Serie"}
             </span>
+          </div>
+
+          {/* Bottoni azione stile Netflix */}
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link
+              href={`/watch/${movie.id}`}
+              className="inline-flex items-center gap-2 rounded-md bg-white px-5 py-2 text-sm font-semibold text-black shadow-md transition-transform duration-200 hover:scale-105"
+            >
+              ▶ Guarda ora
+            </Link>
+
+            <Link
+              href="/my-list"
+              className="inline-flex items-center gap-2 rounded-md bg-neutral-600/80 px-5 py-2 text-sm font-semibold text-white backdrop-blur-sm transition-colors duration-200 hover:bg-neutral-500/90"
+            >
+              La mia lista
+            </Link>
           </div>
         </div>
       </div>
