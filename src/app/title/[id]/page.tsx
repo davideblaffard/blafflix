@@ -6,15 +6,15 @@ import { Movie } from "@/types/movie";
 import { TitleCard } from "@/components/catalog/TitleCard";
 import type { Metadata } from "next";
 
-interface TitlePageProps {
-  params: { id: string };
-}
+type TitleParams = { id: string };
 
 export async function generateMetadata(
-  { params }: TitlePageProps
+  props: { params: Promise<TitleParams> }
 ): Promise<Metadata> {
+  const { id } = await props.params;
+
   try {
-    const movie = await getMovieById(params.id);
+    const movie = await getMovieById(id);
     if (!movie) {
       return {
         title: "Contenuto non trovato – Blafflix"
@@ -32,8 +32,11 @@ export async function generateMetadata(
   }
 }
 
-export default async function TitlePage({ params }: TitlePageProps) {
-  const movie = await getMovieById(params.id);
+export default async function TitlePage(
+  props: { params: Promise<TitleParams> }
+) {
+  const { id } = await props.params;
+  const movie = await getMovieById(id);
 
   if (!movie) {
     return notFound();
